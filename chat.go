@@ -115,6 +115,10 @@ func (c *Chat) sendRequest(ctx context.Context, prompt string) (*http.Response, 
 
 	if c.Session.ConversationId != "" {
 		payload["conversation_id"] = c.Session.ConversationId
+		if prompt == "{continue}" {
+			payload["action"] = "continue"
+			delete(payload, "messages")
+		}
 	}
 
 	marshal, err := json.Marshal(payload)
@@ -179,7 +183,7 @@ func originalResolve(originalChan chan []byte, release func(), c *Chat, message 
 		}
 
 		block := []byte("data: ")
-		fmt.Println("----", string(original), "=")
+		//fmt.Println("----", string(original), "=")
 		if !bytes.HasPrefix(original, block) {
 			continue
 		}
