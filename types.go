@@ -17,6 +17,7 @@ type Options struct {
 	Headers map[string]string
 	BaseURL string
 	Model   string
+	Retry   int
 }
 
 type PartialResponse struct {
