@@ -151,7 +151,7 @@ func (c *Chat) resolve(r *http.Response, message chan PartialResponse) {
 	}
 
 	reader := bufio.NewReader(r.Body)
-	go originalResolve(originalChan, release, c, message)
+	go c.originalResolve(originalChan, release, message)
 
 	for {
 		original, _, err := reader.ReadLine()
@@ -175,7 +175,7 @@ func (c *Chat) resolve(r *http.Response, message chan PartialResponse) {
 	}
 }
 
-func originalResolve(originalChan chan []byte, release func(), c *Chat, message chan PartialResponse) {
+func (c *Chat) originalResolve(originalChan chan []byte, release func(), message chan PartialResponse) {
 	for {
 		original, ok := <-originalChan
 		if !ok {
