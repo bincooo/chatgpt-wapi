@@ -199,7 +199,7 @@ func (c *Chat) originalResolve(originalChan chan []byte, release func(), message
 		}
 
 		var pr PartialResponse
-		err := json.Unmarshal(original, &pr)
+		err := ignorePanicUnmarshal(original, &pr)
 		if err != nil {
 			//message <- PartialResponse{
 			//	Error: err,
@@ -222,4 +222,13 @@ func (c *Chat) originalResolve(originalChan chan []byte, release func(), message
 		}
 		message <- pr
 	}
+}
+
+func ignorePanicUnmarshal(data []byte, v any) error {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("发生了panic:", r)
+		}
+	}()
+	return json.Unmarshal(data, v)
 }
