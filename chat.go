@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func New(token string, reverseURL string) (*Chat, error) {
+func New(token string, reverseURL string) *Chat {
 	if reverseURL == "" {
 		reverseURL = BU
 	}
@@ -24,7 +24,7 @@ func New(token string, reverseURL string) (*Chat, error) {
 	})
 }
 
-func NewChat(opt Options) (*Chat, error) {
+func NewChat(opt Options) *Chat {
 	if opt.BaseURL == "" {
 		opt.BaseURL = BU
 	}
@@ -53,7 +53,7 @@ func NewChat(opt Options) (*Chat, error) {
 		ParentId       string
 	}{"", ""}}
 
-	return &chat, nil
+	return &chat
 }
 
 func (c *Chat) Reply(ctx context.Context, prompt string) (chan PartialResponse, error) {
