@@ -188,6 +188,10 @@ func (c *Chat) originalResolve(originalChan chan []byte, release func(), message
 			continue
 		}
 
+		if !bytes.HasSuffix(original, []byte("}")) {
+			continue
+		}
+
 		original = bytes.TrimPrefix(original, block)
 		if string(original) == "[DONE]" {
 			release()
