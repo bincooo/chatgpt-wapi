@@ -213,7 +213,9 @@ func originalResolve(originalChan chan []byte, release func(), c *Chat, message 
 		}
 
 		c.Session.ParentId = pr.Message.Id
-		c.Session.ConversationId = pr.ConversationId
+		if c.Session.ConversationId == "" {
+			c.Session.ConversationId = pr.ConversationId
+		}
 		message <- pr
 	}
 }
