@@ -40,3 +40,10 @@ type PartialResponse struct {
 		} `json:"content"`
 	} `json:"message"`
 }
+
+// 余额
+type Billing struct {
+	Soft   float64 `json:"soft_limit_usd"`
+	Hard   float64 `json:"hard_limit_usd"`
+	System float64 `json:"system_hard_limit_usd"`
+}
