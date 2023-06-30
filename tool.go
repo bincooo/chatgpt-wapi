@@ -67,7 +67,7 @@ func TokensStartSubstr(prompt string, maxToken int) string {
 // openai-web获取登陆凭证
 func WebLogin(email string, passwd string, proxy string) (string, error) {
 	authenticator := auth.NewAuthenticator(email, passwd, proxy)
-	if err := authenticator.Begin(); err.Error != nil {
+	if err := authenticator.Begin(); err != nil {
 		return "", err.Error
 	}
 	return authenticator.GetAccessToken(), nil
