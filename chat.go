@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"net/http"
@@ -212,6 +213,10 @@ func (c *Chat) originalResolve(originalChan chan []byte, release func(), message
 			continue
 		}
 
+		if pr.Message.Content.Parts == nil {
+			continue
+		}
+
 		if len(strings.TrimSpace(pr.Message.Content.Parts[0])) == 0 {
 			continue
 		}
@@ -224,10 +229,13 @@ func (c *Chat) originalResolve(originalChan chan []byte, release func(), message
 	}
 }
 
-func ignorePanicUnmarshal(data []byte, v any) error {
+func ignorePanicUnmarshal(data []byte, v any) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("发生了panic:", r)
+			if rec, ok := r.(string); ok {
+				err = errors.New(rec)
+			}
 		}
 	}()
 	return json.Unmarshal(data, v)
