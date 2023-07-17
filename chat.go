@@ -147,7 +147,7 @@ func (c *Chat) resolve(r *http.Response, message chan PartialResponse) {
 	var original []byte
 	for {
 		line, hasMore, err := reader.ReadLine()
-		original = append(line)
+		original = append(original, line...)
 		if hasMore {
 			continue
 		}
