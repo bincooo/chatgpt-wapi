@@ -138,31 +138,22 @@ func (c *Chat) sendRequest(ctx context.Context, prompt string) (*http.Response, 
 }
 
 func (c *Chat) resolve(r *http.Response, message chan PartialResponse) {
-	isDONE := false
-	originalChan := make(chan []byte)
-
-	release := func() {
-		if !isDONE {
-			isDONE = true
-			c.mu.Unlock()
-			close(message)
-			close(originalChan)
-		}
-	}
+	defer c.mu.Unlock()
+	defer close(message)
 
 	reader := bufio.NewReader(r.Body)
-	go c.originalResolve(originalChan, release, message)
-
+	DONE := []byte("[DONE]")
+	var original []byte
 	for {
-		original, _, err := reader.ReadLine()
-		//original, err := reader.ReadBytes('\n')
+		line, hasMore, err := reader.ReadLine()
+		original = append(line)
+		if hasMore {
+			continue
+		}
 
 		if err != nil {
-			if !isDONE {
-				message <- PartialResponse{
-					Error: err,
-				}
-				release()
+			message <- PartialResponse{
+				Error: err,
 			}
 			return
 		}
@@ -171,58 +162,57 @@ func (c *Chat) resolve(r *http.Response, message chan PartialResponse) {
 			continue
 		}
 
-		originalChan <- original
+		if bytes.HasSuffix(original, DONE) {
+			return
+		}
+
+		dst := make([]byte, len(original))
+		copy(dst, original)
+		c.originalResolve(dst, message)
+		original = make([]byte, 0)
 	}
 }
 
-func (c *Chat) originalResolve(originalChan chan []byte, release func(), message chan PartialResponse) {
-	for {
-		original, ok := <-originalChan
-		if !ok {
-			return
-		}
-
-		block := []byte("data: ")
-		//fmt.Println("----", string(original), "=")
-		if !bytes.HasPrefix(original, block) {
-			continue
-		}
-
-		if !bytes.HasSuffix(original, []byte("}")) {
-			continue
-		}
-
-		original = bytes.TrimPrefix(original, block)
-		if string(original) == "[DONE]" {
-			release()
-			return
-		}
-
-		var pr PartialResponse
-		err := ignorePanicUnmarshal(original, &pr)
-		if err != nil {
-			//fmt.Println("warn: " + err.Error())
-			continue
-		}
-
-		if pr.Message.Author.Role == "user" {
-			continue
-		}
-
-		if pr.Message.Content.Parts == nil {
-			continue
-		}
-
-		if len(strings.TrimSpace(pr.Message.Content.Parts[0])) == 0 {
-			continue
-		}
-
-		c.Session.ParentId = pr.Message.Id
-		if c.Session.ConversationId == "" {
-			c.Session.ConversationId = pr.ConversationId
-		}
-		message <- pr
+func (c *Chat) originalResolve(original []byte, message chan PartialResponse) {
+	block := []byte("data: ")
+	//fmt.Println("----", string(original), "=")
+	if !bytes.HasPrefix(original, block) {
+		return
 	}
+
+	if !bytes.HasSuffix(original, []byte("}")) {
+		return
+	}
+
+	original = bytes.TrimPrefix(original, block)
+	if bytes.Equal(original, []byte("[DONE]")) {
+		return
+	}
+
+	var pr PartialResponse
+	err := ignorePanicUnmarshal(original, &pr)
+	if err != nil {
+		//fmt.Println("warn: " + err.Error())
+		return
+	}
+
+	if pr.Message.Author.Role == "user" {
+		return
+	}
+
+	if pr.Message.Content.Parts == nil {
+		return
+	}
+
+	if len(strings.TrimSpace(pr.Message.Content.Parts[0])) == 0 {
+		return
+	}
+
+	c.Session.ParentId = pr.Message.Id
+	if c.Session.ConversationId == "" {
+		c.Session.ConversationId = pr.ConversationId
+	}
+	message <- pr
 }
 
 func ignorePanicUnmarshal(data []byte, v any) (err error) {
