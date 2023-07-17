@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -149,6 +150,10 @@ func (c *Chat) resolve(r *http.Response, message chan PartialResponse) {
 		original = append(line)
 		if hasMore {
 			continue
+		}
+
+		if err == io.EOF {
+			return
 		}
 
 		if err != nil {
